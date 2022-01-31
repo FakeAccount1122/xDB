@@ -1,0 +1,14 @@
+-> We run landing_to_aggregate_incremental is used to load daily data, This pipeline automatically takes current date and perform operations
+-> We run landing_to_aggregate_historical is used to load data for previous days, We'll specify date to load data for which we need to run.
+->landing_to_aggregate_incremental
+	--> We'll do lookup activity in metadata.daily_load_status to check if we have any failed jobs.
+		Status Codes Of Jobs - 0(Waiting to run) 1(Completed running) 2(Failed runs)
+	    We'll check if we have any failed jobs are not in our pipeline:
+		    If we have any failed jobs it'll go to false condition then we'll notify a message stating no of job are in failed state to specified mails in pipeline. 
+		    if we dont have any failed jobs It'll go to true state and it'll redirected to main pipeline landing_to_aggregate_incremental which performs all data operations
+	--> Using Mark_Pipeline_InProgress we'll create yesterday date and set it's status value to 0 and insert it in metadata.daily_load_status
+	--> Next we'll go to PreprocessingAndCopyDataToLanding notebook We'll copy file from landing to dlzones and function Collateral_correction takes path, folder name, file name as aruguments and checks for total rows with values, and null record with no values and invalid records whose length is not equal to 61, all those invalid records are written to '/FBE/WASADMIN/_invalid_COLLATERALDTL_<DataOfLoad>'
+	--> The next notebook Parse_Address_Data does the cleaning and processing of customer address data. The extra commas in address are handled using regex and we'll write that data to datamart.DIM_PARTY_LOCATION.
+	--> Next pipeline is landing_to_Staging in this pipleine the first lookup activity we'll give batch id to different record so that we can do parellel processin of data. 
+		Updatefeedpartition - We've 4 tables feed,valid,invalid and master. For all those tables we'll add partition value and load data.
+		LoadFeedtable - In this we'll backup data to feed folder with partition value
